@@ -17,21 +17,40 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./web_app
-        run: pip install -r requirements.txt
+        run: |
+          {
+            echo "$(date) INFO [Install] Starting dependencies installation"
+            pip install -r requirements.txt
+            echo "$(date) INFO [Install] Dependencies installed"
+          } 2>&1 | tee install.log
 
       - name: Run tests
         working-directory: ./web_app
         run: |
-          echo "$(date) INFO Starting tests"
-          pytest -v || echo "$(date) ERROR Some tests failed"
+          {
+            echo "$(date) INFO [Test] Starting tests"
+            pytest -v || echo "$(date) ERROR [Test] Some tests failed"
+            echo "$(date) INFO [Test] Finished tests"
+          } 2>&1 | tee tests.log
 
       - name: Deploy (mock)
         working-directory: ./web_app
         run: |
-          echo "$(date) INFO Deploying app"
-          sleep 3
-          echo "$(date) INFO Deployment complete"
+          {
+            echo "$(date) INFO [Deploy] Deploying app"
+            sleep 3
+            echo "$(date) INFO [Deploy] Deployment complete"
+          } 2>&1 | tee deploy.log
+
+      - name: Merge logs into single file
+        working-directory: ./web_app
+        run: |
+          cat install.log tests.log deploy.log > pipeline.log
+          echo "$(date) INFO [Pipeline] Pipeline finished" >> pipeline.log
 
       - name: Send pipeline log to ELK
+        working-directory: ./web_app
         run: |
-          echo "$(date) INFO Pipeline finished" | curl -XPOST "${{ secrets.NGROK_URL }}" -H "Content-Type: text/plain" --data-binary @-
+          curl -XPOST "${{ secrets.NGROK_URL }}" \
+               -H "Content-Type: text/plain" \
+               --data-binary @pipeline.log
