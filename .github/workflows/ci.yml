@@ -34,4 +34,4 @@ jobs:
 
       - name: Send pipeline log to ELK
         run: |
-          echo "$(date) INFO Pipeline finished" | curl -XPOST "http://<YOUR_IP>:5044" -H "Content-Type: text/plain" --data-binary @-
+          echo "$(date) INFO Pipeline finished" | curl -XPOST "${{ secrets.NGROK_URL }}" -H "Content-Type: text/plain" --data-binary @-
